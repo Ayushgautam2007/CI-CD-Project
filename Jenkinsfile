@@ -14,7 +14,6 @@ pipeline {
                 sh '''
                     $PYTHON --version
                     $PIP --version
-
                     $PYTHON -m pip install --upgrade pip
                     $PIP install -r requirements.txt
                 '''
@@ -41,43 +40,40 @@ pipeline {
         }
     }
 
-   post {
+    post {
 
-    success {
-        emailext(
-            subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-            body: """
-Build Successful
+        success {
+            emailext(
+                subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """Build Successful
 
 Job: ${env.JOB_NAME}
-
 Build Number: ${env.BUILD_NUMBER}
 
 Build URL:
 ${env.BUILD_URL}
 """,
-            to: "ayush.gautam071997@gmail.com"
-        )
-    }
+                to: "ayush.gautam071997@gmail.com"
+            )
+        }
 
-    failure {
-        emailext(
-            subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-            body: """
-Build Failed
+        failure {
+            emailext(
+                subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """Build Failed
 
 Job: ${env.JOB_NAME}
-
 Build Number: ${env.BUILD_NUMBER}
 
 Build URL:
 ${env.BUILD_URL}
 """,
-            to: "ayush.gautam071997@gmail.com"
-        )
-    }
+                to: "ayush.gautam071997@gmail.com"
+            )
+        }
 
-    always {
-        echo "Pipeline execution finished."
+        always {
+            echo "Pipeline execution finished."
+        }
     }
 }
