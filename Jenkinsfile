@@ -7,6 +7,13 @@ pipeline {
 
     stages {
 
+        stage('Checkout') {
+            steps {
+                echo 'Cloning repository...'
+                git branch: 'main', url: 'YOUR_GITHUB_REPO_URL'
+            }
+        }
+
         stage('Build') {
             steps {
                 echo 'Installing Python dependencies...'
@@ -21,11 +28,11 @@ pipeline {
             steps {
                 sh '''
                     echo "===== DEBUG ====="
-                    env | grep MONGO
+                    echo "Workspace: $WORKSPACE"
+                    env | grep MONGO || true
 
-                    echo "First 20 characters:"
-                    printf "%s\n" "$MONGO_URI" | head -c 20
-                    echo
+                    echo "Mongo URI preview:"
+                    echo $MONGO_URI | cut -c1-20
                 '''
             }
         }
@@ -34,17 +41,18 @@ pipeline {
             steps {
                 echo 'Running unit tests...'
                 sh '''
-                    pytest -v
+                    pytest -v || exit 1
                 '''
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying application...'
+                echo 'Deploying Flask application...'
                 sh '''
                     chmod +x start_flask.sh
-                    ./start_flask.sh
+                    nohup ./start_flask.sh > flask.log 2>&1 &
+                    echo "Flask started in background"
                 '''
             }
         }
@@ -66,6 +74,9 @@ Your Jenkins Pipeline has completed successfully.
 Job Name : ${env.JOB_NAME}
 Build No : ${env.BUILD_NUMBER}
 Status   : SUCCESS
+
+Workspace:
+${env.WORKSPACE}
 
 Build URL:
 ${env.BUILD_URL}
@@ -90,6 +101,9 @@ Your Jenkins Pipeline has FAILED.
 Job Name : ${env.JOB_NAME}
 Build No : ${env.BUILD_NUMBER}
 Status   : FAILED
+
+Workspace:
+${env.WORKSPACE}
 
 Build URL:
 ${env.BUILD_URL}
