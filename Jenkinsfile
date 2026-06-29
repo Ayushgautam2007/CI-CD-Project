@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        MONGO_URI = credentials('mongo-uri')
-    }
+    MONGO_URI = "mongodb+srv://db_user:eHospital%401234%23@cluster0.ur5ysem.mongodb.net/mydb?retryWrites=true&w=majority&appName=Cluster0"
+}
 
     stages {
 
