@@ -41,18 +41,43 @@ pipeline {
         }
     }
 
-    post {
+   post {
 
-        success {
-            echo '✅ Build, Test, and Deployment completed successfully.'
-        }
+    success {
+        emailext(
+            subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            body: """
+Build Successful
 
-        failure {
-            echo '❌ Pipeline failed.'
-        }
+Job: ${env.JOB_NAME}
 
-        always {
-            echo 'Pipeline execution finished.'
-        }
+Build Number: ${env.BUILD_NUMBER}
+
+Build URL:
+${env.BUILD_URL}
+""",
+            to: "ayush.gautam071997@gmail.com"
+        )
+    }
+
+    failure {
+        emailext(
+            subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            body: """
+Build Failed
+
+Job: ${env.JOB_NAME}
+
+Build Number: ${env.BUILD_NUMBER}
+
+Build URL:
+${env.BUILD_URL}
+""",
+            to: "ayush.gautam071997@gmail.com"
+        )
+    }
+
+    always {
+        echo "Pipeline execution finished."
     }
 }
