@@ -272,13 +272,3 @@ https://github.com/<your-github-username>/<repository-name>
 ```
 
 ---
-
-# Author
-
-**Ayush Gautam**
-
----
-
-# License
-
-This project is licensed under the MIT License.
