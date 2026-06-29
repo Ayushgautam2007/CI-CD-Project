@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-    MONGO_URI = "mongodb+srv://db_user:eHospital%401234%23@cluster0.ur5ysem.mongodb.net/mydb?retryWrites=true&w=majority&appName=Cluster0"
-}
+        MONGO_URI = "mongodb+srv://db_user:eHospital%401234%23@cluster0.ur5ysem.mongodb.net/mydb?retryWrites=true&w=majority&appName=Cluster0"
+    }
 
     stages {
 
@@ -18,17 +18,18 @@ pipeline {
         }
 
         stage('Debug Environment') {
-    steps {
-        sh '''
-            echo "===== DEBUG ====="
-            env | grep MONGO
+            steps {
+                sh '''
+                    echo "===== DEBUG ====="
+                    env | grep MONGO
 
-            echo "First 20 characters:"
-            printf "%s\n" "$MONGO_URI" | head -c 20
-            echo
-        '''
-    }
-}
+                    echo "First 20 characters:"
+                    printf "%s\n" "$MONGO_URI" | head -c 20
+                    echo
+                '''
+            }
+        }
+
         stage('Test') {
             steps {
                 echo 'Running unit tests...'
@@ -50,12 +51,53 @@ pipeline {
     }
 
     post {
+
         success {
             echo 'Pipeline completed successfully!'
+
+            emailext(
+                to: 'ayush.gautam071997@gmail.com',
+                subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+Hello Ayush,
+
+Your Jenkins Pipeline has completed successfully.
+
+Job Name : ${env.JOB_NAME}
+Build No : ${env.BUILD_NUMBER}
+Status   : SUCCESS
+
+Build URL:
+${env.BUILD_URL}
+
+Regards,
+Jenkins
+"""
+            )
         }
 
         failure {
             echo 'Pipeline failed!'
+
+            emailext(
+                to: 'ayush.gautam071997@gmail.com',
+                subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+Hello Ayush,
+
+Your Jenkins Pipeline has FAILED.
+
+Job Name : ${env.JOB_NAME}
+Build No : ${env.BUILD_NUMBER}
+Status   : FAILED
+
+Build URL:
+${env.BUILD_URL}
+
+Regards,
+Jenkins
+"""
+            )
         }
 
         always {
