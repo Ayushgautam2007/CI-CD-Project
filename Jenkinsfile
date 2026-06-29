@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+environment {
+        MONGO_URI = credentials('mongo-uri')
+    }
+    
     stages {
 
         stage('Build') {
