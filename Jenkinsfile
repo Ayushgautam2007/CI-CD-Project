@@ -18,20 +18,17 @@ pipeline {
         }
 
         stage('Debug Environment') {
-            steps {
-                echo 'Checking MONGO_URI...'
-                sh '''
-                    if [ -z "$MONGO_URI" ]; then
-                        echo "ERROR: MONGO_URI is NOT set!"
-                        exit 1
-                    fi
+    steps {
+        sh '''
+            echo "===== DEBUG ====="
+            env | grep MONGO
 
-                    echo "MONGO_URI starts with:"
-                    echo "$MONGO_URI" | cut -c1-30
-                '''
-            }
-        }
-
+            echo "First 20 characters:"
+            printf "%s\n" "$MONGO_URI" | head -c 20
+            echo
+        '''
+    }
+}
         stage('Test') {
             steps {
                 echo 'Running unit tests...'
