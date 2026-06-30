@@ -6,16 +6,8 @@ on:
       - staging
       - main
 
-  release:
-    types:
-      - published
-
-
 jobs:
 
-# =========================
-# 1. BUILD + TEST
-# =========================
   build-test:
     name: Build & Test
     runs-on: ubuntu-latest
@@ -27,8 +19,7 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: Install + Test
-        run: |
+      - run: |
           pip install --upgrade pip
           pip install -r requirements.txt
           pytest -v
@@ -37,9 +28,6 @@ jobs:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
 
-# =========================
-# 2. DEPLOY STAGING (AUTO)
-# =========================
   deploy-staging:
     name: Deploy to Staging
     needs: build-test
@@ -56,10 +44,7 @@ jobs:
           script: |
             set -e
 
-            echo "🚀 STAGING DEPLOY START"
-
             cd /home/ec2-user/CI-CD-Project
-
             git fetch origin
             git checkout staging
             git reset --hard origin/staging
@@ -69,20 +54,15 @@ jobs:
             pkill -f app.py || true
             nohup python3 app.py > app.log 2>&1 &
 
-            echo "✅ STAGING DONE"
 
-
-# =========================
-# 3. DEPLOY PRODUCTION (CONTROLLED)
-# =========================
   deploy-production:
     name: Deploy to Production
     needs: build-test
-    if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     environment:
-      name: production   # 🔥 THIS ENABLES MANUAL APPROVAL IN GITHUB UI
+      name: production
 
     steps:
       - name: Deploy PROD
@@ -94,10 +74,7 @@ jobs:
           script: |
             set -e
 
-            echo "🚀 PROD DEPLOY START"
-
             cd /home/ec2-user/CI-CD-Project
-
             git fetch origin
             git checkout main
             git reset --hard origin/main
@@ -106,5 +83,3 @@ jobs:
 
             pkill -f app.py || true
             nohup python3 app.py > app.log 2>&1 &
-
-            echo "✅ PROD DONE"
