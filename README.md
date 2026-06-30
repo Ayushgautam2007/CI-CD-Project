@@ -141,6 +141,8 @@ chmod +x start_flask.sh
 6. Set the Script Path to:
 
 <<<<<<< HEAD
+Testing Staging Deployment
+=======
 ```
 Jenkinsfile
 ```
@@ -273,6 +275,12 @@ https://github.com/<your-github-username>/<repository-name>
 ```
 
 ---
-=======
+>>>>>>> main
+
+
+
+<<<<<<< HEAD
 Testing Staging Deployment
->>>>>>> 56e4a7b (Test staging deployment)
+=======
+Added GitHub Actions CI/CD
+>>>>>>> main
