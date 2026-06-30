@@ -3,83 +3,149 @@ name: Flask CI/CD Pipeline
 on:
   push:
     branches:
-      - staging
       - main
+      - staging
+    tags:
+      - 'v*'
 
 jobs:
 
-  build-test:
-    name: Build & Test
+  install:
+    name: Install Dependencies
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.9"
 
-      - run: |
-          pip install --upgrade pip
+      - name: Install Packages
+        run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pytest -v
+          pip install pytest
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: install
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Execute Tests
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        run: |
+          pytest -v
 
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Build
+        run: |
+          mkdir build
+          cp -r * build/
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flask-build
+          path: build/
 
   deploy-staging:
     name: Deploy to Staging
-    needs: build-test
-    if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
+    needs: build
+
+    if: github.ref == 'refs/heads/staging'
 
     steps:
-      - name: Deploy STAGING
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: flask-build
+
+      - name: Deploy Application to Staging
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.STAGING_HOST }}
+          host: ${{ secrets.SERVER_HOST }}
           username: ec2-user
-          key: ${{ secrets.STAGING_SSH_KEY }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             set -e
 
             cd /home/ec2-user/CI-CD-Project
+
             git fetch origin
             git checkout staging
             git reset --hard origin/staging
 
             pip3 install -r requirements.txt
 
-            pkill -f app.py || true
+            pkill -f "python3 app.py" || true
+
             nohup python3 app.py > app.log 2>&1 &
 
+            echo "Staging Deployment Successful"
 
   deploy-production:
     name: Deploy to Production
-    needs: build-test
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    needs: build
+
+    if: startsWith(github.ref, 'refs/tags/v')
 
     environment:
       name: production
 
     steps:
-      - name: Deploy PROD
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: flask-build
+
+      - name: Deploy Application to Production
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.PROD_HOST }}
+          host: ${{ secrets.SERVER_HOST }}
           username: ec2-user
-          key: ${{ secrets.PROD_SSH_KEY }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             set -e
 
             cd /home/ec2-user/CI-CD-Project
+
             git fetch origin
             git checkout main
             git reset --hard origin/main
 
             pip3 install -r requirements.txt
 
-            pkill -f app.py || true
+            pkill -f "python3 app.py" || true
+
             nohup python3 app.py > app.log 2>&1 &
+
+            echo "Production Deployment Successful"
