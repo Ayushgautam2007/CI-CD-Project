@@ -6,21 +6,14 @@ on:
       - main
       - staging
 
-  release:
-    types:
-      - published
-
 jobs:
+
   build-test:
-    name: Build and Test
+    name: Build & Test
     runs-on: ubuntu-latest
 
-    env:
-      MONGO_URI: ${{ secrets.MONGO_URI }}
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -33,36 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Verify Environment Variables
-        run: |
-          if [ -z "$MONGO_URI" ]; then
-            echo "ERROR: MONGO_URI secret is not configured!"
-            exit 1
-          fi
+      - name: Run Tests
+        run: pytest -v
 
-          if [ -z "$SECRET_KEY" ]; then
-            echo "ERROR: SECRET_KEY secret is not configured!"
-            exit 1
-          fi
-
-          echo "Environment variables loaded successfully."
-
-      - name: Run Unit Tests
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        run: |
-          pytest -v
-
-      - name: Build Application
-        run: |
-          echo "Preparing application for deployment..."
-          mkdir -p build
-          cp app.py build/
-          cp requirements.txt build/
-          cp start_flask.sh build/
-          cp -r templates build/
-          echo "Build completed successfully."
 
   deploy-staging:
     name: Deploy to Staging
@@ -70,42 +36,39 @@ jobs:
     if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
 
-    env:
-      STAGING_HOST: ${{ secrets.STAGING_HOST }}
-      STAGING_USER: ${{ secrets.STAGING_USER }}
-      API_TOKEN: ${{ secrets.API_TOKEN }}
-      DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - name: Deploy via SSH to Staging Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            echo "Deploying to STAGING..."
+            cd /home/ubuntu/CI-CD-Project
+            git pull origin staging
+            pip install -r requirements.txt
+            nohup python app.py > app.log 2>&1 &
+            echo "STAGING DEPLOYMENT SUCCESS"
 
-      - name: Deploy to Staging
-        run: |
-          echo "Deploying to Staging..."
-          echo "Host: $STAGING_HOST"
-          echo "User: $STAGING_USER"
-          echo "Deployment completed successfully."
 
   deploy-production:
     name: Deploy to Production
     needs: build-test
-    if: github.event_name == 'release'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
-    env:
-      PROD_HOST: ${{ secrets.PROD_HOST }}
-      PROD_USER: ${{ secrets.PROD_USER }}
-      PROD_API_TOKEN: ${{ secrets.PROD_API_TOKEN }}
-      PROD_DEPLOY_KEY: ${{ secrets.PROD_DEPLOY_KEY }}
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Deploy to Production
-        run: |
-          echo "Deploying to Production..."
-          echo "Host: $PROD_HOST"
-          echo "User: $PROD_USER"
-          echo "Production deployment completed successfully."
+      - name: Deploy via SSH to Production Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            echo "Deploying to PRODUCTION..."
+            cd /home/ubuntu/CI-CD-Project
+            git pull origin main
+            pip install -r requirements.txt
+            nohup python app.py > app.log 2>&1 &
+            echo "PRODUCTION DEPLOYMENT SUCCESS"
