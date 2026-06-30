@@ -1,70 +1,22 @@
-# Jenkins CI/CD Pipeline for Flask Application
+# Flask Student Management Application
 
-## Objective
+A Flask-based CRUD web application for managing student records using MongoDB Atlas.
 
-The objective of this project is to implement a Continuous Integration and Continuous Deployment (CI/CD) pipeline using Jenkins for a Python Flask web application. The pipeline automates the process of building, testing, and deploying the application whenever changes are pushed to the GitHub repository.
-
----
-
-# Project Architecture
-
-```
-Developer
-    │
-    ▼
-GitHub Repository
-    │
-    ▼
-GitHub Webhook
-    │
-    ▼
-Jenkins Pipeline
-    │
-    ├── Build
-    ├── Test
-    └── Deploy
-    │
-    ▼
-Flask Application (Staging Environment)
-```
+This project demonstrates complete CI/CD implementation using both **Jenkins** and **GitHub Actions**.
 
 ---
 
-# Technologies Used
+# Tech Stack
 
-* Jenkins
-* Python 3.9
-* Flask
-* Git
-* GitHub
-* Pytest
-* Linux (RHEL/Amazon Linux)
-* Shell Script
-
----
-
-# Prerequisites
-
-The following software must be installed before configuring the pipeline:
-
-* Jenkins
-* Java 21
-* Python 3.9+
-* pip
-* Git
-* pytest
-* GitHub Account
-
-Verify the installation using:
-
-```bash
-python3 --version
-pip3 --version
-pytest --version
-git --version
-java -version
-jenkins --version
-```
+- Python 3.9
+- Flask
+- MongoDB Atlas
+- PyMongo
+- Git & GitHub
+- GitHub Actions
+- Jenkins
+- AWS EC2 (Amazon Linux 2023)
+- Linux Shell
 
 ---
 
@@ -78,209 +30,512 @@ CI-CD-Project/
 ├── test_app.py
 ├── start_flask.sh
 ├── Jenkinsfile
-├── README.md
-├── LICENSE
-└── templates/
+│
+├── templates/
+│     ├── index.html
+│     ├── add.html
+│     └── update.html
+│
+├── .github/
+│    └── workflows/
+│         └── ci-cd.yml
+│
+└── README.md
 ```
 
 ---
 
-# Jenkins Pipeline
+# Features
 
-The pipeline is defined inside the `Jenkinsfile` located in the root directory of the project.
+- Add Student
+- Update Student
+- Delete Student
+- View Students
+- MongoDB Atlas Integration
+- Automated Testing
+- CI/CD Pipeline
+- Staging Deployment
+- Production Deployment
 
-It consists of three stages:
+---
 
-## Stage 1: Build
-
-The Build stage installs all required Python dependencies.
-
-Commands executed:
+# Clone Repository
 
 ```bash
-python3 -m pip install --upgrade pip
-pip3 install -r requirements.txt
+git clone https://github.com/<your-username>/CI-CD-Project.git
+
+cd CI-CD-Project
 ```
 
 ---
 
-## Stage 2: Test
+# Create Virtual Environment
 
-The Test stage runs unit tests using Pytest.
+Linux
 
-Command:
+```bash
+python3 -m venv venv
+
+source venv/bin/activate
+```
+
+Windows
+
+```bash
+python -m venv venv
+
+venv\Scripts\activate
+```
+
+---
+
+# Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+# Environment Variables
+
+Create a `.env` file.
+
+```env
+MONGO_URI=your_mongodb_connection_string
+
+SECRET_KEY=your_secret_key
+```
+
+Example
+
+```env
+MONGO_URI=mongodb+srv://db_user:password@cluster.mongodb.net/mydb?retryWrites=true&w=majority
+
+SECRET_KEY=flask_secret_key
+```
+
+---
+
+# Run Application
+
+```bash
+python app.py
+```
+
+Application runs on
+
+```
+http://localhost:5000
+```
+
+---
+
+# Run Tests
 
 ```bash
 pytest -v
 ```
 
-If any test fails, the pipeline stops and the deployment stage is skipped.
+---
+
+# Jenkins CI/CD Pipeline
+
+## Objective
+
+Automate Build, Test and Deployment using Jenkins.
 
 ---
 
-## Stage 3: Deploy
+## Jenkins Pipeline Stages
 
-The Deploy stage deploys the application to the staging environment using the deployment script.
+- Clone Repository
+- Install Dependencies
+- Run Unit Tests
+- Code Quality Checks
+- Build Application
+- Deploy Application
+- Email Notification
 
-Commands:
+---
 
-```bash
-chmod +x start_flask.sh
-./start_flask.sh
+## Jenkins Plugins Used
+
+- Git
+- Pipeline
+- Email Extension
+- Workspace Cleanup
+
+---
+
+## Jenkins Credentials
+
+### GitHub Credentials
+
+```
+github-creds
+```
+
+Contains
+
+- GitHub Username
+- GitHub Personal Access Token
+
+---
+
+### Gmail Credentials
+
+```
+gmail-creds
+```
+
+Used for Email Notification.
+
+---
+
+## Jenkins Environment Variables
+
+```
+MONGO_URI
+
+SECRET_KEY
 ```
 
 ---
 
-# Jenkins Job Configuration
+## Jenkins Build Trigger
 
-1. Create a new Pipeline Job in Jenkins.
-2. Select **Pipeline script from SCM**.
-3. Choose **Git** as the SCM.
-4. Enter the GitHub repository URL.
-5. Select the `main` branch.
-6. Set the Script Path to:
+Manual Build
 
-<<<<<<< HEAD
-Testing Staging Deployment
-=======
-```
-Jenkinsfile
-```
+or
 
-7. Save the job.
-8. Click **Build Now** to execute the pipeline.
+GitHub Webhook
 
 ---
 
-# GitHub Integration
+## Jenkins Deployment
 
-The source code is hosted on GitHub.
-
-After cloning the repository to the Jenkins server:
-
-```bash
-git clone <repository-url>
-```
-
-The Jenkins Pipeline automatically pulls the latest code from the repository.
+Deploys Flask Application on AWS EC2 (Amazon Linux 2023)
 
 ---
 
-# Automatic Build Trigger
+# GitHub Actions CI/CD Pipeline
 
-GitHub Webhook is configured to trigger Jenkins automatically whenever changes are pushed to the `main` branch.
-
-Webhook URL:
+Workflow File
 
 ```
-http://<JENKINS_SERVER_IP>:8080/github-webhook/
+.github/workflows/ci-cd.yml
 ```
-
-This enables automatic execution of the CI/CD pipeline.
 
 ---
 
-# Email Notification
+## Pipeline Triggers
 
-Jenkins is configured to send email notifications for both successful and failed builds.
-
-Configuration:
-
-* SMTP Server
-* Gmail App Password
-* Email Notification Plugin
-
-Notifications are sent after every pipeline execution.
-
----
-
-# Running the Pipeline
-
-Push the latest code to GitHub:
-
-```bash
-git add .
-git commit -m "Updated Jenkins Pipeline"
-git push origin main
-```
-
-The pipeline automatically performs:
-
-1. Build
-2. Test
-3. Deploy
-
----
-
-# Pipeline Flow
+### Push to Main
 
 ```
-GitHub Push
-      │
-      ▼
-Jenkins Trigger
-      │
-      ▼
-Checkout Source Code
-      │
-      ▼
 Build
-      │
-      ▼
+
 Test
-      │
-      ▼
-Deploy
-      │
-      ▼
-Application Running
 ```
 
 ---
 
-# Expected Output
+### Push to Staging
 
-The Jenkins pipeline executes successfully with the following stages:
+```
+Build
 
-* Build ✔
-* Test ✔
-* Deploy ✔
+Test
 
-The Flask application is deployed successfully to the staging environment.
+Deploy to Staging
+```
+
+---
+
+### GitHub Release
+
+```
+Build
+
+Test
+
+Deploy to Production
+```
+
+---
+
+# Workflow Jobs
+
+## Build and Test
+
+- Checkout Code
+- Setup Python
+- Install Dependencies
+- Run Pytest
+- Build Application
+
+---
+
+## Deploy to Staging
+
+Runs only when
+
+```
+staging branch
+```
+
+Tasks
+
+- Checkout Repository
+- Load GitHub Secrets
+- Deploy Flask Application
+
+---
+
+## Deploy to Production
+
+Runs only when
+
+```
+GitHub Release is published
+```
+
+Tasks
+
+- Checkout Repository
+- Load Production Secrets
+- Deploy Flask Application
+
+---
+
+# GitHub Secrets
+
+## Repository Secrets
+
+### Application
+
+```
+MONGO_URI
+
+SECRET_KEY
+```
+
+---
+
+### Staging
+
+```
+STAGING_HOST
+
+STAGING_USER
+
+DEPLOY_KEY
+
+API_TOKEN
+```
+
+---
+
+### Production
+
+```
+PROD_HOST
+
+PROD_USER
+
+PROD_DEPLOY_KEY
+
+PROD_API_TOKEN
+```
+
+---
+
+# Branch Strategy
+
+```
+main
+```
+
+Production-ready code
+
+```
+staging
+```
+
+Testing and validation before production
+
+---
+
+# Deployment Flow
+
+```
+Developer
+
+↓
+
+Push Code
+
+↓
+
+GitHub
+
+↓
+
+GitHub Actions
+
+↓
+
+Build
+
+↓
+
+Install Dependencies
+
+↓
+
+Run Tests
+
+↓
+
+If Success
+
+↓
+
+Deploy to Staging
+```
+
+After Release
+
+```
+GitHub Release
+
+↓
+
+GitHub Actions
+
+↓
+
+Production Deployment
+```
+
+---
+
+# AWS Environment
+
+Operating System
+
+```
+Amazon Linux 2023
+```
+
+Application Server
+
+```
+Flask
+```
+
+Database
+
+```
+MongoDB Atlas
+```
+
+---
+
+# Security
+
+Sensitive values are stored using GitHub Repository Secrets.
+
+Examples
+
+- MongoDB URI
+- Secret Key
+- API Tokens
+- Deployment Keys
+- Server Information
+
+No credentials are stored inside the repository.
+
+---
+
+# Testing
+
+Framework
+
+```
+pytest
+```
+
+Test Cases
+
+- Home Page
+- Add Student
+- Update Student
+- Delete Student
+
+---
+
+# Code Quality
+
+Tools
+
+- Black
+- Bandit
+- Pylint
+
+---
+
+# Continuous Integration
+
+Every push automatically
+
+- Installs dependencies
+- Runs unit tests
+- Validates build
+
+---
+
+# Continuous Deployment
+
+### Staging
+
+Automatic deployment after successful build from the **staging** branch.
+
+### Production
+
+Automatic deployment after publishing a **GitHub Release**.
 
 ---
 
 # Screenshots
 
-Include the following screenshots in the repository or submission:
+Include screenshots of
 
-* Jenkins Dashboard
-* Pipeline Job Configuration
-* GitHub Webhook Configuration
-* Build Stage
-* Test Stage
-* Deploy Stage
-* Stage View
-* Console Output
-* Successful Build Status
+- Flask Application
+- Jenkins Dashboard
+- Jenkins Pipeline
+- GitHub Actions Workflow
+- Successful Build
+- Successful Tests
+- Staging Deployment
+- Production Deployment
+- MongoDB Atlas
+
+---
+
+# Author
+
+**Ayush Gautam**
+
+DevOps Engineer
+
+GitHub
+
+https://github.com/Ayushgautam2007
 
 ---
 
-# Repository URL
+# License
 
-Replace the URL below with your GitHub repository URL.
-
-```
-https://github.com/<your-github-username>/<repository-name>
-```
-
----
->>>>>>> main
-
-
-
-<<<<<<< HEAD
-Testing Staging Deployment
-=======
-Added GitHub Actions CI/CD
->>>>>>> main
+This project is developed for educational and DevOps learning purposes.
