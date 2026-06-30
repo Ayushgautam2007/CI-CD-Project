@@ -17,6 +17,7 @@ jobs:
 
     env:
       MONGO_URI: ${{ secrets.MONGO_URI }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
       - name: Checkout Repository
@@ -32,7 +33,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Verify Environment Variables
+        run: |
+          if [ -z "$MONGO_URI" ]; then
+            echo "ERROR: MONGO_URI secret is not configured!"
+            exit 1
+          fi
+
+          if [ -z "$SECRET_KEY" ]; then
+            echo "ERROR: SECRET_KEY secret is not configured!"
+            exit 1
+          fi
+
+          echo "Environment variables loaded successfully."
+
       - name: Run Unit Tests
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: |
           pytest -v
 
@@ -64,12 +82,10 @@ jobs:
 
       - name: Deploy to Staging
         run: |
-          echo "Starting Staging Deployment..."
+          echo "Deploying to Staging..."
           echo "Host: $STAGING_HOST"
           echo "User: $STAGING_USER"
-          echo "Using API Token from GitHub Secrets"
-          echo "Using Deployment Key from GitHub Secrets"
-          echo "Deployment Successful."
+          echo "Deployment completed successfully."
 
   deploy-production:
     name: Deploy to Production
@@ -89,9 +105,7 @@ jobs:
 
       - name: Deploy to Production
         run: |
-          echo "Starting Production Deployment..."
+          echo "Deploying to Production..."
           echo "Host: $PROD_HOST"
           echo "User: $PROD_USER"
-          echo "Using Production API Token from GitHub Secrets"
-          echo "Using Production Deployment Key from GitHub Secrets"
-          echo "Production Deployment Successful."
+          echo "Production deployment completed successfully."
