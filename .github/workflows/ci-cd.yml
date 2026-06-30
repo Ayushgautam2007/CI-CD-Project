@@ -64,21 +64,33 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Verify Application Build
+      - name: Build Flask Application
         run: |
           echo "Starting Build..."
           python -m compileall .
           echo "Build Successful"
 
-  deploy-staging:
-    name: Deploy to Staging
+  debug:
+    name: Debug Branch
     needs: build
-    if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to Staging Server
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Print GitHub Context
+        run: |
+          echo "github.ref=${{ github.ref }}"
+          echo "github.ref_name=${{ github.ref_name }}"
+          echo "github.event_name=${{ github.event_name }}"
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: debug
+    if: github.ref_name == 'staging'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2 (Staging)
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ec2-user
@@ -98,20 +110,20 @@ jobs:
 
             nohup python3 app.py > app.log 2>&1 &
 
-            echo "===== STAGING DEPLOYMENT SUCCESSFUL ====="
+            echo "========== STAGING DEPLOYED =========="
 
   deploy-production:
     name: Deploy to Production
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: debug
+    if: startsWith(github.ref_name, 'v')
     runs-on: ubuntu-latest
 
     environment:
       name: production
 
     steps:
-      - name: Deploy to Production Server
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy to EC2 (Production)
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ec2-user
@@ -131,4 +143,4 @@ jobs:
 
             nohup python3 app.py > app.log 2>&1 &
 
-            echo "===== PRODUCTION DEPLOYMENT SUCCESSFUL ====="
+            echo "========== PRODUCTION DEPLOYED =========="
