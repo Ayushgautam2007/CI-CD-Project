@@ -18,7 +18,8 @@ jobs:
         with:
           python-version: "3.9"
 
-      - run: |
+      - name: Install + Test
+        run: |
           pip install --upgrade pip
           pip install -r requirements.txt
           pytest -v
@@ -62,7 +63,6 @@ jobs:
     name: Deploy to Production
     needs: deploy-staging
     runs-on: ubuntu-latest
-    if: success()
 
     steps:
       - name: Deploy PROD
