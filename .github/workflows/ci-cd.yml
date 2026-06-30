@@ -30,9 +30,13 @@ jobs:
           pip install pytest
 
   test:
-    name: Run Tests
+    name: Run Unit Tests
     needs: install
     runs-on: ubuntu-latest
+
+    env:
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
       - name: Checkout Repository
@@ -48,10 +52,21 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      - name: Run Unit Tests
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      - name: Verify Environment Variables
+        run: |
+          if [ -z "$MONGO_URI" ]; then
+            echo "❌ MONGO_URI is missing"
+            exit 1
+          fi
+
+          if [ -z "$SECRET_KEY" ]; then
+            echo "❌ SECRET_KEY is missing"
+            exit 1
+          fi
+
+          echo "✅ Environment variables loaded successfully"
+
+      - name: Run Tests
         run: |
           pytest -v
 
@@ -61,14 +76,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Build Flask Application
         run: |
           echo "Starting Build..."
           python -m compileall .
-          echo "Build Successful"
+          echo "Build Completed Successfully."
 
   debug:
     name: Debug Branch
@@ -89,12 +103,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to EC2 (Staging)
+      - name: Deploy to Staging Server
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ec2-user
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
             set -e
 
@@ -110,7 +124,7 @@ jobs:
 
             nohup python3 app.py > app.log 2>&1 &
 
-            echo "========== STAGING DEPLOYED =========="
+            echo "===== STAGING DEPLOYMENT SUCCESSFUL ====="
 
   deploy-production:
     name: Deploy to Production
@@ -118,16 +132,15 @@ jobs:
     if: startsWith(github.ref_name, 'v')
     runs-on: ubuntu-latest
 
-    environment:
-      name: production
+    environment: production
 
     steps:
-      - name: Deploy to EC2 (Production)
+      - name: Deploy to Production Server
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ec2-user
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
           script: |
             set -e
 
@@ -143,4 +156,4 @@ jobs:
 
             nohup python3 app.py > app.log 2>&1 &
 
-            echo "========== PRODUCTION DEPLOYED =========="
+            echo "===== PRODUCTION DEPLOYMENT SUCCESSFUL ====="
