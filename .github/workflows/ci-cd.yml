@@ -30,7 +30,8 @@ jobs:
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        run: pytest -v
+        run: |
+          pytest -v
 
 
   deploy-staging:
@@ -48,10 +49,18 @@ jobs:
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
             echo "🚀 Deploying to STAGING..."
-            cd /home/ec2-user/CI-CD-Project
+
+            cd /home/ec2-user/CI-CD-Project || exit 1
+
+            git fetch origin
+            git checkout staging
             git pull origin staging
-            pip install -r requirements.txt
-            nohup python app.py > app.log 2>&1 &
+
+            pip3 install -r requirements.txt
+
+            pkill -f "python app.py" || true
+            nohup python3 app.py > app.log 2>&1 &
+
             echo "✅ STAGING DEPLOYMENT SUCCESS"
 
 
@@ -70,8 +79,16 @@ jobs:
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
             echo "🚀 Deploying to PRODUCTION..."
-            cd /home/ec2-user/CI-CD-Project
+
+            cd /home/ec2-user/CI-CD-Project || exit 1
+
+            git fetch origin
+            git checkout main
             git pull origin main
-            pip install -r requirements.txt
-            nohup python app.py > app.log 2>&1 &
+
+            pip3 install -r requirements.txt
+
+            pkill -f "python app.py" || true
+            nohup python3 app.py > app.log 2>&1 &
+
             echo "✅ PRODUCTION DEPLOYMENT SUCCESS"
