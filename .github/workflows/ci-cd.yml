@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - staging
+      - main   # allow prod trigger separately
 
 jobs:
 
@@ -31,6 +32,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     needs: build-test
+    if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
 
     steps:
@@ -44,7 +46,6 @@ jobs:
             echo "🚀 STAGING START"
 
             cd /home/ec2-user/CI-CD-Project || exit 1
-
             git config --global --add safe.directory /home/ec2-user/CI-CD-Project
 
             git fetch origin
@@ -61,7 +62,8 @@ jobs:
 
   deploy-production:
     name: Deploy to Production
-    needs: deploy-staging
+    needs: build-test
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
@@ -75,7 +77,6 @@ jobs:
             echo "🚀 PROD START"
 
             cd /home/ec2-user/CI-CD-Project || exit 1
-
             git config --global --add safe.directory /home/ec2-user/CI-CD-Project
 
             git fetch origin
@@ -88,4 +89,3 @@ jobs:
             nohup python3 app.py > app.log 2>&1 & disown
 
             echo "✅ PROD DONE"
-
