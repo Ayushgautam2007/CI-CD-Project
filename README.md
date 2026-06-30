@@ -6,6 +6,25 @@ This project demonstrates complete CI/CD implementation using both **Jenkins** a
 
 ---
 
+                 Developer
+                     │
+                 Git Push
+                     │
+                     ▼
+            GitHub Repository
+             │              │
+     Webhook │              │ GitHub Events
+             ▼              ▼
+         Jenkins      GitHub Actions
+             │              │
+        Build/Test/Deploy   │
+             └──────┬────────┘
+                    ▼
+            Flask Application
+                    │
+                    ▼
+          Notification / Deployment
+
 # Tech Stack
 
 - Python 3.9
