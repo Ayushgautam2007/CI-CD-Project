@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - staging
-      - main   # allow prod trigger separately
+      - main
 
 jobs:
 
@@ -30,23 +30,24 @@ jobs:
 
 
   deploy-staging:
-    name: Deploy to Staging
+    name: Deploy Staging
     needs: build-test
     if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy STAGING
+      - name: Deploy to STAGING
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ec2-user
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
-            echo "🚀 STAGING START"
+            set -e
 
-            cd /home/ec2-user/CI-CD-Project || exit 1
-            git config --global --add safe.directory /home/ec2-user/CI-CD-Project
+            echo "🚀 STAGING DEPLOY"
+
+            cd /home/ec2-user/CI-CD-Project
 
             git fetch origin
             git checkout staging
@@ -55,29 +56,30 @@ jobs:
             pip3 install -r requirements.txt
 
             pkill -f app.py || true
-            nohup python3 app.py > app.log 2>&1 & disown
+            nohup python3 app.py > app.log 2>&1 &
 
             echo "✅ STAGING DONE"
 
 
   deploy-production:
-    name: Deploy to Production
+    name: Deploy Production
     needs: build-test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy PROD
+      - name: Deploy to PROD
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ec2-user
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            echo "🚀 PROD START"
+            set -e
 
-            cd /home/ec2-user/CI-CD-Project || exit 1
-            git config --global --add safe.directory /home/ec2-user/CI-CD-Project
+            echo "🚀 PROD DEPLOY"
+
+            cd /home/ec2-user/CI-CD-Project
 
             git fetch origin
             git checkout main
@@ -86,6 +88,6 @@ jobs:
             pip3 install -r requirements.txt
 
             pkill -f app.py || true
-            nohup python3 app.py > app.log 2>&1 & disown
+            nohup python3 app.py > app.log 2>&1 &
 
             echo "✅ PROD DONE"
