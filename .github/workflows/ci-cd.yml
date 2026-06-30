@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: Install Packages
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -31,8 +31,8 @@ jobs:
 
   test:
     name: Run Tests
-    runs-on: ubuntu-latest
     needs: install
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
@@ -48,7 +48,7 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      - name: Execute Tests
+      - name: Run Unit Tests
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -57,38 +57,27 @@ jobs:
 
   build:
     name: Build Application
-    runs-on: ubuntu-latest
     needs: test
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Prepare Build
+      - name: Verify Application Build
         run: |
-          mkdir build
-          cp -r * build/
-
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: flask-build
-          path: build/
+          echo "Starting Build..."
+          python -m compileall .
+          echo "Build Successful"
 
   deploy-staging:
     name: Deploy to Staging
-    runs-on: ubuntu-latest
     needs: build
-
     if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: flask-build
-
-      - name: Deploy Application to Staging
+      - name: Deploy to Staging Server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -109,25 +98,19 @@ jobs:
 
             nohup python3 app.py > app.log 2>&1 &
 
-            echo "Staging Deployment Successful"
+            echo "===== STAGING DEPLOYMENT SUCCESSFUL ====="
 
   deploy-production:
     name: Deploy to Production
-    runs-on: ubuntu-latest
     needs: build
-
     if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
 
     environment:
       name: production
 
     steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: flask-build
-
-      - name: Deploy Application to Production
+      - name: Deploy to Production Server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -148,4 +131,4 @@ jobs:
 
             nohup python3 app.py > app.log 2>&1 &
 
-            echo "Production Deployment Successful"
+            echo "===== PRODUCTION DEPLOYMENT SUCCESSFUL ====="
