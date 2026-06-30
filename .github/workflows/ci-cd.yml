@@ -27,6 +27,9 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Tests
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: pytest -v
 
 
@@ -37,19 +40,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy via SSH to Staging Server
+      - name: Deploy to Staging Server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
-            echo "Deploying to STAGING..."
+            echo "🚀 Deploying to STAGING..."
             cd /home/ubuntu/CI-CD-Project
             git pull origin staging
             pip install -r requirements.txt
             nohup python app.py > app.log 2>&1 &
-            echo "STAGING DEPLOYMENT SUCCESS"
+            echo "✅ STAGING DEPLOYMENT SUCCESS"
 
 
   deploy-production:
@@ -59,16 +62,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy via SSH to Production Server
+      - name: Deploy to Production Server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            echo "Deploying to PRODUCTION..."
+            echo "🚀 Deploying to PRODUCTION..."
             cd /home/ubuntu/CI-CD-Project
             git pull origin main
             pip install -r requirements.txt
             nohup python app.py > app.log 2>&1 &
-            echo "PRODUCTION DEPLOYMENT SUCCESS"
+            echo "✅ PRODUCTION DEPLOYMENT SUCCESS"
