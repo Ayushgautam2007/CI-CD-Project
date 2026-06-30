@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - staging
-      - main
 
 jobs:
 
   build-test:
+    name: Build & Test
     runs-on: ubuntu-latest
 
     steps:
@@ -19,6 +19,7 @@ jobs:
           python-version: "3.9"
 
       - run: |
+          pip install --upgrade pip
           pip install -r requirements.txt
           pytest -v
         env:
@@ -27,8 +28,8 @@ jobs:
 
 
   deploy-staging:
+    name: Deploy to Staging
     needs: build-test
-    if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
 
     steps:
@@ -39,9 +40,11 @@ jobs:
           username: ec2-user
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
-            echo "🚀 STAGING DEPLOY"
+            echo "🚀 STAGING START"
 
-            cd /home/ec2-user/staging-app || exit 1
+            cd /home/ec2-user/CI-CD-Project || exit 1
+
+            git config --global --add safe.directory /home/ec2-user/CI-CD-Project
 
             git fetch origin
             git checkout staging
@@ -49,16 +52,17 @@ jobs:
 
             pip3 install -r requirements.txt
 
-            pkill -f "app.py --port 5001" || true
-            nohup python3 app.py --port 5001 > staging.log 2>&1 &
+            pkill -f app.py || true
+            nohup python3 app.py > app.log 2>&1 & disown
 
             echo "✅ STAGING DONE"
 
 
   deploy-production:
-    needs: build-test
-    if: github.ref == 'refs/heads/main'
+    name: Deploy to Production
+    needs: deploy-staging
     runs-on: ubuntu-latest
+    if: success()
 
     steps:
       - name: Deploy PROD
@@ -68,9 +72,11 @@ jobs:
           username: ec2-user
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            echo "🚀 PROD DEPLOY"
+            echo "🚀 PROD START"
 
-            cd /home/ec2-user/prod-app || exit 1
+            cd /home/ec2-user/CI-CD-Project || exit 1
+
+            git config --global --add safe.directory /home/ec2-user/CI-CD-Project
 
             git fetch origin
             git checkout main
@@ -78,7 +84,7 @@ jobs:
 
             pip3 install -r requirements.txt
 
-            pkill -f "app.py --port 5000" || true
-            nohup python3 app.py --port 5000 > prod.log 2>&1 &
+            pkill -f app.py || true
+            nohup python3 app.py > app.log 2>&1 & disown
 
             echo "✅ PROD DONE"
