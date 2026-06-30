@@ -11,10 +11,12 @@ on:
       - published
 
 jobs:
-
   build-test:
     name: Build and Test
     runs-on: ubuntu-latest
+
+    env:
+      MONGO_URI: ${{ secrets.MONGO_URI }}
 
     steps:
       - name: Checkout Repository
@@ -30,7 +32,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Tests
+      - name: Run Unit Tests
         run: |
           pytest -v
 
@@ -38,7 +40,10 @@ jobs:
         run: |
           echo "Preparing application for deployment..."
           mkdir -p build
-          cp -r app.py templates requirements.txt start_flask.sh build/
+          cp app.py build/
+          cp requirements.txt build/
+          cp start_flask.sh build/
+          cp -r templates build/
           echo "Build completed successfully."
 
   deploy-staging:
@@ -47,26 +52,24 @@ jobs:
     if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
 
+    env:
+      STAGING_HOST: ${{ secrets.STAGING_HOST }}
+      STAGING_USER: ${{ secrets.STAGING_USER }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}
+      DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Deploy to Staging
-        env:
-          STAGING_HOST: ${{ secrets.STAGING_HOST }}
-          STAGING_USER: ${{ secrets.STAGING_USER }}
-          API_TOKEN: ${{ secrets.API_TOKEN }}
-          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
           echo "Starting Staging Deployment..."
-          echo "Server: $STAGING_HOST"
+          echo "Host: $STAGING_HOST"
           echo "User: $STAGING_USER"
-          echo "Using API Token stored in GitHub Secrets"
-          echo "Using Deployment Key stored in GitHub Secrets"
-          echo "Deploying Flask Application..."
-          chmod +x start_flask.sh
-          ./start_flask.sh
-          echo "Staging Deployment Successful."
+          echo "Using API Token from GitHub Secrets"
+          echo "Using Deployment Key from GitHub Secrets"
+          echo "Deployment Successful."
 
   deploy-production:
     name: Deploy to Production
@@ -74,23 +77,21 @@ jobs:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
 
+    env:
+      PROD_HOST: ${{ secrets.PROD_HOST }}
+      PROD_USER: ${{ secrets.PROD_USER }}
+      PROD_API_TOKEN: ${{ secrets.PROD_API_TOKEN }}
+      PROD_DEPLOY_KEY: ${{ secrets.PROD_DEPLOY_KEY }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Deploy to Production
-        env:
-          PROD_HOST: ${{ secrets.PROD_HOST }}
-          PROD_USER: ${{ secrets.PROD_USER }}
-          PROD_API_TOKEN: ${{ secrets.PROD_API_TOKEN }}
-          PROD_DEPLOY_KEY: ${{ secrets.PROD_DEPLOY_KEY }}
         run: |
           echo "Starting Production Deployment..."
-          echo "Server: $PROD_HOST"
+          echo "Host: $PROD_HOST"
           echo "User: $PROD_USER"
-          echo "Using Production API Token stored in GitHub Secrets"
-          echo "Using Production Deployment Key stored in GitHub Secrets"
-          echo "Deploying Flask Application..."
-          chmod +x start_flask.sh
-          ./start_flask.sh
+          echo "Using Production API Token from GitHub Secrets"
+          echo "Using Production Deployment Key from GitHub Secrets"
           echo "Production Deployment Successful."
