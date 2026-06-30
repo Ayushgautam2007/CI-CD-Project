@@ -5,7 +5,7 @@ A Flask-based CRUD web application for managing student records using MongoDB At
 This project demonstrates complete CI/CD implementation using both **Jenkins** and **GitHub Actions**.
 
 ---
-
+# Combined Architecture of CI/CD Pipeline using Jenkins and Github Actions
                  Developer
                      │
                  Git Push
