@@ -1,28 +1,37 @@
 pipeline {
     agent any
 
+    environment {
+        PYTHON = "python3"
+        PIP = "pip3"
+    }
+
     stages {
 
         stage('Build') {
             steps {
-                echo 'Installing Python dependencies...'
+                echo '========== Build Stage =========='
                 sh '''
-                    python3 -m pip install --upgrade pip
-                    pip3 install -r requirements.txt
+                    $PYTHON --version
+                    $PIP --version
+                    $PYTHON -m pip install --upgrade pip
+                    $PIP install -r requirements.txt
                 '''
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running unit tests...'
-                sh 'pytest'
+                echo '========== Test Stage =========='
+                sh '''
+                    pytest -v
+                '''
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying application to staging...'
+                echo '========== Deploy Stage =========='
                 sh '''
                     chmod +x start_flask.sh
                     ./start_flask.sh
@@ -32,14 +41,39 @@ pipeline {
     }
 
     post {
+
         success {
-            echo 'Pipeline completed successfully!'
+            emailext(
+                subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """Build Successful
+
+Job: ${env.JOB_NAME}
+Build Number: ${env.BUILD_NUMBER}
+
+Build URL:
+${env.BUILD_URL}
+""",
+                to: "ayush.gautam071997@gmail.com"
+            )
         }
+
         failure {
-            echo 'Pipeline failed!'
+            emailext(
+                subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """Build Failed
+
+Job: ${env.JOB_NAME}
+Build Number: ${env.BUILD_NUMBER}
+
+Build URL:
+${env.BUILD_URL}
+""",
+                to: "ayush.gautam071997@gmail.com"
+            )
         }
+
         always {
-            echo 'Pipeline execution finished.'
+            echo "Pipeline execution finished."
         }
     }
 }
