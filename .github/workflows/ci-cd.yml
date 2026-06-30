@@ -50,7 +50,7 @@ jobs:
           script: |
             echo "🚀 Deploying to STAGING..."
 
-            cd /CI-CD-Project || exit 1
+            cd /home/ec2-user/CI-CD-Project || exit 1
 
             git fetch origin
             git checkout staging
@@ -80,7 +80,7 @@ jobs:
           script: |
             echo "🚀 Deploying to PRODUCTION..."
 
-            cd /CI-CD-Project || exit 1
+            cd /home/ec2-user/CI-CD-Project || exit 1
 
             git fetch origin
             git checkout main
