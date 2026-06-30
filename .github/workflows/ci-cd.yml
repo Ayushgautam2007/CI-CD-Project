@@ -1,0 +1,96 @@
+name: Flask CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+  release:
+    types:
+      - published
+
+jobs:
+
+  build-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Tests
+        run: |
+          pytest -v
+
+      - name: Build Application
+        run: |
+          echo "Preparing application for deployment..."
+          mkdir -p build
+          cp -r app.py templates requirements.txt start_flask.sh build/
+          echo "Build completed successfully."
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build-test
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Staging
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          echo "Starting Staging Deployment..."
+          echo "Server: $STAGING_HOST"
+          echo "User: $STAGING_USER"
+          echo "Using API Token stored in GitHub Secrets"
+          echo "Using Deployment Key stored in GitHub Secrets"
+          echo "Deploying Flask Application..."
+          chmod +x start_flask.sh
+          ./start_flask.sh
+          echo "Staging Deployment Successful."
+
+  deploy-production:
+    name: Deploy to Production
+    needs: build-test
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Production
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_USER: ${{ secrets.PROD_USER }}
+          PROD_API_TOKEN: ${{ secrets.PROD_API_TOKEN }}
+          PROD_DEPLOY_KEY: ${{ secrets.PROD_DEPLOY_KEY }}
+        run: |
+          echo "Starting Production Deployment..."
+          echo "Server: $PROD_HOST"
+          echo "User: $PROD_USER"
+          echo "Using Production API Token stored in GitHub Secrets"
+          echo "Using Production Deployment Key stored in GitHub Secrets"
+          echo "Deploying Flask Application..."
+          chmod +x start_flask.sh
+          ./start_flask.sh
+          echo "Production Deployment Successful."
