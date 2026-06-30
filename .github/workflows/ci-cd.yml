@@ -15,11 +15,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.9"
 
@@ -34,16 +32,21 @@ jobs:
     needs: install
     runs-on: ubuntu-latest
 
+    # Start MongoDB Container
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+
     env:
-      MONGO_URI: ${{ secrets.MONGO_URI }}
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      MONGO_URI: mongodb://localhost:27017/test_student_db
+      SECRET_KEY: testing-secret
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.9"
 
@@ -52,19 +55,9 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      - name: Verify Environment Variables
+      - name: Wait for MongoDB
         run: |
-          if [ -z "$MONGO_URI" ]; then
-            echo "❌ MONGO_URI is missing"
-            exit 1
-          fi
-
-          if [ -z "$SECRET_KEY" ]; then
-            echo "❌ SECRET_KEY is missing"
-            exit 1
-          fi
-
-          echo "✅ Environment variables loaded successfully"
+          sleep 10
 
       - name: Run Tests
         run: |
@@ -80,38 +73,23 @@ jobs:
 
       - name: Build Flask Application
         run: |
-          echo "Starting Build..."
           python -m compileall .
-          echo "Build Completed Successfully."
-
-  debug:
-    name: Debug Branch
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Print GitHub Context
-        run: |
-          echo "github.ref=${{ github.ref }}"
-          echo "github.ref_name=${{ github.ref_name }}"
-          echo "github.event_name=${{ github.event_name }}"
+          echo "Build Successful"
 
   deploy-staging:
     name: Deploy to Staging
-    needs: debug
+    needs: build
     if: github.ref_name == 'staging'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to Staging Server
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
-            set -e
-
             cd /home/ec2-user/CI-CD-Project
 
             git fetch origin
@@ -124,26 +102,22 @@ jobs:
 
             nohup python3 app.py > app.log 2>&1 &
 
-            echo "===== STAGING DEPLOYMENT SUCCESSFUL ====="
-
   deploy-production:
     name: Deploy to Production
-    needs: debug
+    needs: build
     if: startsWith(github.ref_name, 'v')
     runs-on: ubuntu-latest
 
     environment: production
 
     steps:
-      - name: Deploy to Production Server
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            set -e
-
             cd /home/ec2-user/CI-CD-Project
 
             git fetch origin
@@ -155,5 +129,3 @@ jobs:
             pkill -f "python3 app.py" || true
 
             nohup python3 app.py > app.log 2>&1 &
-
-            echo "===== PRODUCTION DEPLOYMENT SUCCESSFUL ====="
