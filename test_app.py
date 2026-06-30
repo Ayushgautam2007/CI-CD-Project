@@ -14,7 +14,7 @@ def client():
         mongo.db.students.delete_many({})
 
         mongo.db.students.insert_one({
-            "_id": ObjectId("66fddff25f4b5f6a0a123456"),
+            "_id": ObjectId("66fddff25f4b5f6a0a12345"),
             "name": "Test Student",
             "email": "test@student.com",
             "course": "Flask"
@@ -54,7 +54,7 @@ def test_add_student(client):
 def test_update_student(client):
 
     response = client.post(
-        "/update/66fddff25f4b5f6a0a123456",
+        "/update/66fddff25f4b5f6a0a12345",
         data={
             "name": "Updated Name",
             "email": "updated@student.com",
@@ -83,3 +83,6 @@ def test_delete_student(client):
     )
 
     assert response.status_code == 200
+
+    with app.app_context():
+        assert mongo.db.students.find_one({"_id": student_id}) is None

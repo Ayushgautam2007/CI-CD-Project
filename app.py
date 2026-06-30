@@ -10,44 +10,39 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Default values for local testing / GitHub Actions
-app.config["MONGO_URI"] = os.environ.get(
-    "MONGO_URI",
-    "mongodb://localhost:27017/test_student_db"
-)
+# Configuration
+app.config["MONGO_URI"] = os.getenv("MONGO_URI")
+app.secret_key = os.getenv("SECRET_KEY")
 
-app.config["SECRET_KEY"] = os.environ.get(
-    "SECRET_KEY",
-    "test-secret-key"
-)
-
+# Initialize MongoDB
 mongo = PyMongo(app, tlsCAFile=certifi.where())
 
 
+# Home Page
 @app.route('/')
 def index():
     students = mongo.db.students.find()
     return render_template('index.html', students=students)
 
 
+# Add Student
 @app.route('/add', methods=['GET', 'POST'])
 def add_student():
+
     if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        course = request.form['course']
 
         mongo.db.students.insert_one({
-            "name": name,
-            "email": email,
-            "course": course
+            "name": request.form["name"],
+            "email": request.form["email"],
+            "course": request.form["course"]
         })
 
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))
 
-    return render_template('add_student.html')
+    return render_template("add_student.html")
 
 
+# Update Student
 @app.route('/update/<student_id>', methods=['GET', 'POST'])
 def update_student(student_id):
 
@@ -68,14 +63,15 @@ def update_student(student_id):
             }
         )
 
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))
 
     return render_template(
-        'update_student.html',
+        "update_student.html",
         student=student
     )
 
 
+# Delete Student
 @app.route('/delete/<student_id>')
 def delete_student(student_id):
 
@@ -83,7 +79,7 @@ def delete_student(student_id):
         {"_id": ObjectId(student_id)}
     )
 
-    return redirect(url_for('index'))
+    return redirect(url_for("index"))
 
 
 if __name__ == "__main__":
